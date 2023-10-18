@@ -19,3 +19,23 @@ export const getBooksByAuthorApi = (authorId, params) =>
   api.get(`/authors/${authorId}/books`, {
     params: { _expand: "author", ...params },
   });
+
+export const getFavoriteBooksApi = async (userId) =>
+  api.get(`/favorites`, {
+    params: { userId },
+  });
+
+export const postFavoriteBookApi = async (param) =>
+  api.post(`/favorites`, param);
+
+export const deleteFavoriteBookApi = async (id) =>
+  api.delete(`/favorites/${id}`);
+
+export const postSeenBookApi = async (param) => api.post(`/seenBooks`, param);
+
+export const getSeenBooksApi = async (userId) =>
+  api.get(`/seenBooks`, {
+    params: { userId },
+  });
+
+export const deleteSeenBookApi = async (id) => api.delete(`/seenBooks/${id}`);

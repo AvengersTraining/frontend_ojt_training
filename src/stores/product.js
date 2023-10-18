@@ -7,14 +7,14 @@ export const useProductStore = defineStore("product", {
   }),
 
   actions: {
-    addSeenProduct(product) {
-      const seenProduct = this.seenProducts.find(
-        (item) => item.id === product.id,
-      );
-
-      if (!seenProduct) {
-        this.seenProducts.unshift(product);
-      }
+    setFavoriteProducts(products) {
+      this.favoriteProducts = products;
+    },
+    setSeenProducts(products) {
+      this.seenProducts = products;
+    },
+    clearFavoriteProducts() {
+      this.favoriteProducts = [];
     },
     addFavoriteProduct(product) {
       const favoriteProducts = this.favoriteProducts.find(
@@ -34,10 +34,21 @@ export const useProductStore = defineStore("product", {
         return item.id !== product.id;
       });
     },
-    removeFavoriteProducts() {
-      this.favoriteProducts = [];
+    removeSeenProduct(product) {
+      this.seenProducts = this.seenProducts.filter((item) => {
+        return item.id !== product.id;
+      });
     },
-    removeAllSeenProducts() {
+    addSeenProduct(product) {
+      const seenProduct = this.seenProducts.find(
+        (item) => item.id === product.id,
+      );
+
+      if (!seenProduct) {
+        this.seenProducts.unshift(product);
+      }
+    },
+    clearSeenProducts() {
       this.seenProducts = [];
     },
   },
