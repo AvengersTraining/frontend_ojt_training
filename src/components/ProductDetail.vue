@@ -9,14 +9,17 @@ import ProductComment from "@components/ProductComment.vue";
 import { computed, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useProductStore } from "@stores/product";
+import { useAuthStore } from "@stores/auth";
 import BookList from "@components/BookList.vue";
 import IconHeart from "@icons/IconHeart.vue";
 import IconHeartFill from "@icons/IconHeartFill.vue";
-import { getBooksByCategoryApi, getBooksByAuthorApi } from "@apis/book.js";
+import { getBooksByCategoryApi, getBooksByAuthorApi } from "@apis/book";
+import { putCartItemApi, postCartItemApi } from "@apis/cart";
 import { productApiMessage } from "@locales/vi/messages";
 import BaseBreadcrumb from "@components/BaseBreadcrumb.vue";
 
 const productStore = useProductStore();
+const authStore = useAuthStore();
 const router = useRouter();
 const cartStore = useCartStore();
 const props = defineProps(["productDetail"]);
@@ -80,21 +83,42 @@ const style = reactive({
     "mr-2 inline-block rounded-t-lg border-b-2 border-blue-600 p-4 text-blue-600",
   tabTitle:
     "mr-2 inline-block cursor-pointer rounded-t-lg border-b-2 p-4 text-lg",
-
-  image: "w-[25%]  max-lg:w-[40%] max-sm:w-full max-sm:mb-2 ",
+  image: "w-[25%] max-lg:w-[40%] max-sm:w-full max-sm:mb-2",
   contentContainer: "pl-8 w-[75%] max-sm:p-0 max-sm:w-full",
-  contentTitle: "leading-8 ",
-  descriptionTitle: "mb-8 border-2  rounded-lg	overflow-hidden	 ",
+  contentTitle: "leading-8",
+  descriptionTitle: "mb-8 border-2 rounded-lg overflow-hidden",
   button:
-    "flex items-center justify-center bg-red-700 hover:bg-red-800 py-2 mt-4  rounded-lg px-3 text-sm duration-300 ",
+    "flex items-center justify-center bg-red-700 hover:bg-red-800 py-2 mt-4 rounded-lg px-3 text-sm duration-300",
   listBookTitle:
     "absolute left-1/2 -translate-x-1/2 bg-white px-3 text-xl font-medium text-gray-900 text-center",
 });
 
-const handleAddToCart = () => {
+const handleAddToCart = async () => {
+  if (!authStore.userInfo) {
+    $toast.error(cartMessage.loginRequired);
+    return;
+  }
   try {
-    cartStore.addToCart(props.productDetail);
-    $toast.success(cartMessage.success);
+    const inCartItem = cartStore.cart.find(
+      (item) => props.productDetail.id === item.book.id,
+    );
+    if (inCartItem) {
+      if (inCartItem.inCartQuantity < props.productDetail.quantity) {
+        cartStore.increment(inCartItem.id);
+        await putCartItemApi(inCartItem.id, inCartItem);
+        $toast.success(cartMessage.success);
+      } else throw new Error(cartMessage.outOfStock);
+    } else {
+      const newCartItem = {
+        book: props.productDetail,
+        userId: authStore.userInfo.id,
+        inCartQuantity: 1,
+      };
+      const { data } = await postCartItemApi(newCartItem);
+      newCartItem.id = data.id;
+      cartStore.addItem(newCartItem);
+      $toast.success(cartMessage.success);
+    }
   } catch ({ message: error }) {
     $toast.error(error);
   }
